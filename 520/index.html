@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Story - 520 主页</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            /* 采用中心极光暗蓝向外围纯黑渐变的深邃夜空底色 */
+            background: radial-gradient(circle at 50% 50%, #09081a 0%, #030206 100%);
+            margin: 0;
+            overflow-x: hidden;
+            /* 换成干净、高级的现代无衬线字体，立刻消除土味和AI模板感 */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #ffffff;
+        }
+
+        /* 顶端悬浮导航栏 */
+        .navbar {
+            position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+            background: rgba(11, 9, 26, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 117, 140, 0.1); display: flex; justify-content: center; align-items: center; z-index: 10;
+        }
+        .nav-links { display: flex; list-style: none; gap: 50px; }
+        .nav-links a { color: rgba(255, 255, 255, 0.8); text-decoration: none; font-size: 1rem; letter-spacing: 2px; position: relative; padding: 8px 0; transition: color 0.3s ease; }
+        .nav-links a:hover, .nav-links a.active { color: #ff7eb3; text-shadow: 0 0 10px rgba(255, 126, 179, 0.5); }
+        .nav-links a::after { content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px; background: linear-gradient(90deg, #ff758c, #ff7eb3); transition: all 0.3s ease; transform: translateX(-50%); }
+        .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+
+        /* 主页容器 */
+        .container { position: relative; z-index: 2; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        header { animation: fadeInDown 1.5s ease; margin-bottom: 40px; }
+        header h1 { font-size: 3rem; font-weight: 300; letter-spacing: 6px; background: linear-gradient(45deg, #ff758c 0%, #ff7eb3 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 15px; }
+        header p { font-size: 1.2rem; color: #a29bfe; letter-spacing: 3px; margin-bottom: 40px; }
+
+        .enter-btn {
+            display: inline-block; padding: 14px 40px; background: linear-gradient(45deg, #ff758c, #ff7eb3);
+            color: white; font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; border-radius: 30px;
+            text-decoration: none; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); transition: all 0.3s ease; animation: fadeInDown 1.8s ease;
+        }
+        .enter-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(255, 117, 140, 0.6); }
+
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+		/* 1. 3D 粒子画布：严格放置在最底层，但必须开启 pointer-events 以响应 3D 爱心和花瓣的鼠标交互 */
+		#particleCanvas {
+		    position: fixed;
+		    top: 0;
+		    left: 0;
+		    width: 100%;
+		    height: 100%;
+		    z-index: 1;            /* 处于最低层，作为纯净背景 */
+		    pointer-events: auto;  /* 极其重要：更改为 auto，让鼠标划过卡片时底部的 3D 爱心能产生空间涟漪 */
+		}
+		
+		/* 2. 主体包裹层/容器：浮动在粒子画布正上方 */
+		main, .main-content, header, .admin-panel {
+		    position: relative;
+		    z-index: 2;            /* 提升层级，显示在粒子上方 */
+		    pointer-events: none;  /* 容器本身不拦截鼠标，让鼠标穿透它去和 3D 粒子交互 */
+		}
+		
+		/* 3. 核心内容卡片布局（如 .container、.memory-card、.timeline-content） */
+		/* 针对 520 主页的 .container 或 memories 的内容卡片 */
+		.container, .memory-card, .timeline-content, .login-box, .admin-panel {
+		    position: relative;
+		    z-index: 3;            /* 确保布局在 particleCanvas 上方 */
+		    pointer-events: auto;  /* 恢复卡片内按钮的点击 */
+		
+		    /* 【核心修改一：超清透背景】 */
+		    /* 将原本的 0.02 或 0.05 降低到 0.005 甚至 0.002。 */
+		    /* 这样几乎就是一层隐形水晶，能让 99.5% 粒子的微光和色彩无损穿透出来 */
+		    background: rgba(255, 255, 255, 0.003) !important;
+		    
+		    /* 【核心修改二：空气感雾化】 */
+		    /* blur 调到 12px 到 15px 是最具有现代大厂科技感的通透厚度 */
+		    /* 如果想让粒子完全不模糊、极度清晰，可以把 15px 改成 5px 甚至直接删掉 blur */
+		    backdrop-filter: blur(1px) saturate(150%) !important;
+		    -webkit-backdrop-filter: blur(10px) saturate(150%) !important;
+		    
+		    /* 【核心修改三：极细微光边缘】 */
+		    /* 边框的透明度也同步压低（从 0.08 降到 0.04），只留下一层似有似无的高光轮廓线 */
+		    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+		    
+		    /* 【核心修改四：深空暗影】 */
+		    /* 彻底拿掉任何带有白色的投影，改用纯黑色的超大范围扩散弱阴影，让卡片自然悬浮 */
+		    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5) !important;
+		}
+		
+		/* 4. 解决层级提升后，文字在粒子上方由于对比度可能产生的微弱模糊问题 */
+		h1, h2, .title {
+		    color: #ffffff !important;
+		    text-shadow: 0 0 20px rgba(255, 117, 140, 0.4), 0 4px 10px rgba(0, 0, 0, 0.7) !important;
+		}
+		p, span, .time {
+    color: rgba(255, 255, 255, 0.95) !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85) !important; /* 加深字体的黑色背景垫底 */
+}
+.music-player {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 999;
+
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    box-shadow:
+        0 8px 30px rgba(0,0,0,0.45),
+        0 0 20px rgba(255,117,140,0.25);
+
+    transition: all 0.35s ease;
+
+    animation: musicFloat 3s ease-in-out infinite;
+}
+
+.music-player:hover {
+    transform: scale(1.08);
+    box-shadow:
+        0 10px 40px rgba(0,0,0,0.6),
+        0 0 25px rgba(255,117,140,0.45);
+}
+
+.music-player.playing {
+    animation:
+        musicRotate 6s linear infinite,
+        musicPulse 2s ease-in-out infinite;
+}
+
+@keyframes musicRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes musicPulse {
+    0%,100% {
+        box-shadow:
+            0 0 15px rgba(255,117,140,0.3);
+    }
+    50% {
+        box-shadow:
+            0 0 35px rgba(255,117,140,0.7);
+    }
+}
+
+@keyframes musicFloat {
+    0%,100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+    </style>
+	<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar">
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">主页</a></li>
+            <li><a href="memories.html">我们的回忆</a></li>
+            <li><a href="time.html">在一起的时间</a></li>
+        </ul>
+    </nav>
+
+    <canvas id="particleCanvas"></canvas>
+
+    <div class="container">
+        <header>
+			
+            <h1>ABOUT US • 我们的故事</h1>
+            <p>今天也是向小登心动的一天</p>
+        </header>
+        <a href="memories.html" class="enter-btn">✨ 点击进入回忆相册</a>
+    </div>
+	<audio id="bgm" loop preload="auto">
+	    <source src="music/bgm.mp3" type="audio/mpeg">
+	</audio>
+	
+	<!-- 音乐控制按钮 -->
+	<div class="music-player" id="musicToggle">
+	    🎵
+	</div>
+	<script type="module" src="js/particles.js"></script>
+	
+	
+</body>
+</html>
